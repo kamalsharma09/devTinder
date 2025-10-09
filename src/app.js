@@ -1,24 +1,42 @@
 const express = require("express");
-const { adminAuth } = require("./middleware/auth")
+const { adminAuth } = require("./middleware/auth");
+const User = require("./models/user")
+const connectDb = require("./config/database")
 const app = express();
 
-app.get("/admin",adminAuth, (req, res) => {
-    res.send("test");
-});
+app.use(express.json());
 
-app.get("/admin/test",adminAuth, (req, res) => {
-    res.send("test");
-});
+app.post("/signup", async (req, res) => {
 
-// app.use('/signup', (req, res) => {
-//     res.send("Welcome to Signup Page");
-// });
+    //creating a new instance of the model
+    const userJson = {
+        firstName: "Kamal",
+        lastName: "Sharma",
+        email: "kamalsharmag123@gmail.com",
+        password: "pasword",
+        age: 27,
+        gender: "Male"
+    }
 
-// app.use("/",(req, res) => {
-//     res.send("Welcome to Homepage !!");
-// });
+    const user = new User(req.body);
+    try{
+        await user.save();
+        res.send("User Added Successfully !!");
+    } catch(err) {
+        res.status(400).send("Error saving the user : "+err.message);
+    }
+    
+})
 
 
-app.listen(7777,() => {
-    console.log("SERVER STARTED")
-});
+connectDb().then(() => {
+    console.log("Database is connected");
+    app.listen(7777,() => {
+        console.log("SERVER STARTED")
+    });
+    
+}).catch((err) => {
+    console.log("database is not connected", err);
+})
+
+
