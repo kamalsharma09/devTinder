@@ -9,14 +9,14 @@ app.use(express.json());
 app.post("/signup", async (req, res) => {
 
     //creating a new instance of the model
-    const userJson = {
-        firstName: "Kamal",
-        lastName: "Sharma",
-        email: "kamalsharmag123@gmail.com",
-        password: "pasword",
-        age: 27,
-        gender: "Male"
-    }
+    // const userJson = {
+    //     firstName: "Kamal",
+    //     lastName: "Sharma",
+    //     email: "kamalsharmag123@gmail.com",
+    //     password: "pasword",
+    //     age: 27,
+    //     gender: "Male"
+    // }
 
     const user = new User(req.body);
     try{
@@ -27,6 +27,36 @@ app.post("/signup", async (req, res) => {
     }
     
 })
+
+
+// get user by emailID
+app.get("/user", async (req, res) => {
+    const emailId = req.body.email;
+    try {
+        const user = await User.find({emailId: emailId});
+        if(user.length === 0) {
+            res.status(404).send("User not found");
+        }
+        res.send(user);
+    } catch (err) {
+        res.status(400).send("Something went wrong !!");
+    }
+    
+});
+
+// get all user
+app.get("/feed", async (req, res) => {
+    try {
+        const user = await User.find();
+        if(user.length === 0) {
+            res.status(404).send("User not found");
+        }
+        res.send(user);
+    } catch (err) {
+        res.status(400).send("Something went wrong !!");
+    }
+    
+});
 
 
 connectDb().then(() => {
