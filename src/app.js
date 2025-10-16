@@ -1,5 +1,7 @@
 const express = require("express");
 const { adminAuth } = require("./middleware/auth");
+const {validateSignupData} = require("./utils/validation");
+const bcrypt = require("bcrypt");
 const User = require("./models/user")
 const connectDb = require("./config/database")
 const app = express();
@@ -18,10 +20,46 @@ app.post("/signup", async (req, res) => {
     //     gender: "Male"
     // }
 
-    const user = new User(req.body);
+    
     try{
+        validateSignupData(req.body);
+        const {firstName, lastName, emailId, password} = req.body;
+
+        const hashPassword = await bcrypt.hash(password, 10);
+
+        const user = new User({
+            firstName,
+            lastName,
+            emailId,
+            password: hashPassword
+        });
+        
         await user.save();
         res.send("User Added Successfully !!");
+    } catch(err) {
+        res.status(400).send("Error saving the user : "+err.message);
+    }
+    
+})
+
+app.post("/login", async (req, res) => {
+    try{
+        const {emailId, password} = req.body;
+
+        const user = await User.findOne({emailId: emailId});
+        if(!user) {
+            throw new Error("Invalid credential");
+        }
+
+        const isPasswordIsCorrect = await bcrypt.compare(password, user.password);
+        
+        if(isPasswordIsCorrect) {
+            res.status(200).send("Login Successfully");
+        } else {
+            throw new Error("Invalid credential 2");
+        }
+        
+      
     } catch(err) {
         res.status(400).send("Error saving the user : "+err.message);
     }
@@ -57,6 +95,51 @@ app.get("/feed", async (req, res) => {
     }
     
 });
+
+// update user by id
+app.patch("/user/:userId", async (req, res) => {
+    const userId =req.params.userId;
+    const data = req.body;
+    try {
+        const ALLOWED_UPDATE = [
+            "firstName",
+            "lastName",
+            "password",
+            "skills",
+            "age",
+            "gender"
+        ];
+
+        const isAllowedUpdate = Object.keys(data).every((k) => 
+            ALLOWED_UPDATE.includes(k)
+        )
+
+        if(!isAllowedUpdate) {
+            throw new Error("Update not allowed");
+        }
+
+        const user = await User.findByIdAndUpdate({_id: userId}, data, {
+            returnDocument: "after",
+            runValidators: true
+        });
+        res.send(user);
+    }
+    catch(err) {
+        res.status(400).send("UPDATE FAILED: "+err.message);
+    }
+})
+
+// delete user by id
+app.delete("/user", async (req, res) => {
+    const userId =req.body.userId;
+    try {
+        const user = await User.findOneAndDelete(userId);
+        res.send(user);
+    }
+    catch(err) {
+        res.status(400).send("something went wrong !!");
+    }
+})
 
 
 connectDb().then(() => {
