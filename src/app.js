@@ -1,12 +1,14 @@
 const express = require("express");
-const { adminAuth } = require("./middleware/auth");
+const { userAuth } = require("./middleware/auth");
 const {validateSignupData} = require("./utils/validation");
 const bcrypt = require("bcrypt");
-const User = require("./models/user")
-const connectDb = require("./config/database")
+const cookieParser = require('cookie-parser');
+const User = require("./models/user");
+const connectDb = require("./config/database");
 const app = express();
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.post("/signup", async (req, res) => {
 
@@ -51,9 +53,17 @@ app.post("/login", async (req, res) => {
             throw new Error("Invalid credential");
         }
 
-        const isPasswordIsCorrect = await bcrypt.compare(password, user.password);
+        const isPasswordIsCorrect = await user.validatePassword(password);
         
         if(isPasswordIsCorrect) {
+            // generate cookies
+            const token = await user.getJWT();
+
+            // set cookies
+            res.cookie("token", token,{
+                expires: new Date(Date.now() + 84 * 3600000) // cookie will be removed after 7 days
+            })
+
             res.status(200).send("Login Successfully");
         } else {
             throw new Error("Invalid credential 2");
@@ -64,7 +74,31 @@ app.post("/login", async (req, res) => {
         res.status(400).send("Error saving the user : "+err.message);
     }
     
-})
+});
+
+
+// profile api
+app.get("/profile", userAuth,  async (req, res) => {
+    try {
+        const user = req.user;
+        res.send(user);
+
+    } catch(err) {
+        res.status(400).send("Error saving the user : "+err.message);
+    }
+});
+
+//send connection request API
+
+app.post("/sendConnectionRequest", userAuth, async (req, res) => {
+    try{
+
+        res.send(req.user.firstName+" is sending request");
+    } catch(err) {
+        res.status(400).send("ERROR: "+err.message);
+    }
+});
+
 
 
 // get user by emailID
@@ -145,7 +179,7 @@ app.delete("/user", async (req, res) => {
 connectDb().then(() => {
     console.log("Database is connected");
     app.listen(7777,() => {
-        console.log("SERVER STARTED")
+        console.log("SERVER STARTED");
     });
     
 }).catch((err) => {
