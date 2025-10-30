@@ -47,14 +47,14 @@ authRouter.post("/login", async (req, res) => {
                 expires: new Date(Date.now() + 84 * 3600000) // cookie will be removed after 7 days
             })
 
-            res.status(200).send("Login Successfully");
+            res.status(200).json({message: "Login Successfully", data: user});
         } else {
-            throw new Error("Invalid credential 2");
+            throw new Error("Invalid credential");
         }
         
       
     } catch(err) {
-        res.status(400).send("Error saving the user : "+err.message);
+        res.status(400).send("ERROR: "+err.message);
     }
     
 });
