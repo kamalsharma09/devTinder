@@ -4,6 +4,7 @@ const connectDb = require("./config/database");
 const cors = require('cors');
 const app = express();
 const router = express.Router();
+require('dotenv').config();
 
 app.use(cors({
   origin: "http://localhost:5173",  // your frontend origin
@@ -101,7 +102,7 @@ app.use("/", userRouter);
 
 connectDb().then(() => {
     console.log("Database is connected");
-    app.listen(7777,() => {
+    app.listen(process.env.POST,() => {
         console.log("SERVER STARTED");
     });
     

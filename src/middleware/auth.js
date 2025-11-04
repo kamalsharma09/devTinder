@@ -7,7 +7,7 @@ const userAuth = async (req, res, next) => {
         if(!token) {
             return res.status(401).json({message: "Please login again !!"});
         }
-        const decodedObj = jwt.verify(token, "DEV@Tinder123");
+        const decodedObj = jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findById(decodedObj._id);
         if(!user) {
             throw new Error("User not found")
